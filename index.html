@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学生绿色消费行为研究系统 v15</title>
+    
+    <script src="https://unpkg.com/jspsych@7.3.3"></script>
+    <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+
+    <style>
+        :root {
+            --apple-bg: #ffffff;
+            --apple-green: #34c759;
+            --apple-text: #1d1d1f;
+            --apple-blue: #0071e3;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --border: #d2d2d7;
+            --receipt-bg: #f5f5f7;
+        }
+
+        body {
+            background-color: #f2f2f7;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            color: var(--apple-text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        .iphone-frame {
+            width: 420px; height: 92vh; background: var(--apple-bg);
+            border-radius: 44px; border: 11px solid #1c1c1e;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.22);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+
+        /* 首页后台入口 */
+        .admin-entry {
+            position: absolute; bottom: 20px; left: 0; right: 0;
+            text-align: center; font-size: 10px; color: #e2e2e7;
+            cursor: pointer; letter-spacing: 0.8px; z-index: 50;
+        }
+
+        /* Apple 风格首页排版 */
+        .apple-home { padding: 45px 35px; text-align: left; flex: 1; display: flex; flex-direction: column; }
+        .apple-home h1 { font-size: 34px; font-weight: 700; margin: 0; letter-spacing: -1.2px; }
+        .apple-home p { font-size: 14px; color: #86868b; margin: 10px 0 30px; line-height: 1.5; }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 11px; font-weight: 600; color: #86868b; margin-bottom: 5px; text-transform: uppercase; }
+        .apple-select {
+            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border);
+            background: #f5f5f7; font-size: 15px; outline: none; -webkit-appearance: none;
+        }
+
+        /* 购物页玻璃导航 */
+        .glass-nav {
+            background: var(--glass-bg); backdrop-filter: saturate(180%) blur(25px);
+            padding: 45px 20px 10px; position: sticky; top: 0; z-index: 100;
+        }
+        .cat-row { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+        .cat-row::-webkit-scrollbar { display: none; }
+        .cat-tag {
+            padding: 7px 15px; border-radius: 18px; background: #e8e8ed;
+            border: none; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+        }
+        .cat-tag.active { background: #000; color: #fff; }
+
+        /* 商品展示 */
+        .mall-body { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .p-card { background: #fff; border-radius: 20px; padding: 12px; border: 0.5px solid #efeff4; display: flex; flex-direction: column; }
+        .p-img { width: 100%; aspect-ratio: 1/1; border-radius: 14px; object-fit: cover; margin-bottom: 8px; background: #f5f5f7; }
+        .p-title { font-size: 13px; font-weight: 600; height: 32px; overflow: hidden; line-height: 1.2; }
+        .p-meta { font-size: 10px; color: #86868b; margin: 3px 0; }
+
+        /* 黑色胶囊按钮 */
+        .action-btn { 
+            background: #000; color: #fff; border: none; padding: 16px; 
+            border-radius: 16px; font-weight: 600; cursor: pointer; font-size: 16px;
+            transition: all 0.2s;
+        }
+        .action-btn:active { transform: scale(0.97); }
+
+        /* 结算清单/小票样式 */
+        .receipt-view { padding: 30px; text-align: left; overflow-y: auto; flex: 1; }
+        .receipt-header { border-bottom: 2px solid #1d1d1f; padding-bottom: 15px; margin-bottom: 20px; }
+        .receipt-item { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 10px; }
+        .receipt-total { border-top: 0.5px solid #d2d2d7; margin-top: 20px; padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div id="jspsych-target"></div>
+
+<script>
+    // --- 1. 商品库：真实品牌与参数 ---
+    const CATEGORIES = ["全部", "食品", "饮品", "日用", "文具"];
+    const SKU_BASE = [
+        { b: "维他奶", kw: "soy-milk", c: "饮品", f: "低糖原味", w: "250ml", p: 3.5, eco: true, co2: 35 },
+        { b: "农夫山泉", kw: "water", c: "饮品", f: "天然矿泉水", w: "550ml", p: 2.0, eco: false, co2: 125 },
+        { b: "康师傅", kw: "noodles", c: "食品", f: "红烧牛肉面", w: "110g", p: 4.5, eco: false, co2: 215 },
+        { b: "全麦欧包", kw: "bread", c: "食品", f: "奇亚籽坚果", w: "85g", p: 9.9, eco: true, co2: 52 },
+        { b: "MUJI中性笔", kw: "pen", c: "文具", f: "再生纸杆", w: "单支", p: 8.0, eco: true, co2: 12 },
+        { b: "本色竹纸", kw: "bamboo-paper", c: "日用", f: "不漂白抽纸", w: "120抽", p: 5.5, eco: true, co2: 65 }
+    ];
+
+    const INVENTORY = [];
+    for(let i=0; i<100; i++) {
+        const t = SKU_BASE[i % SKU_BASE.length];
+        INVENTORY.push({
+            id: 'sku_' + i, ...t,
+            name: t.b + (i > 10 ? ` 系列-${100+i}` : ''),
+            img: `https://loremflickr.com/320/320/${t.kw}?lock=${i}`
+        });
+    }
+
+    // --- 2. 实验参数 ---
+    const DB_KEY = 'campus_eco_v15_db';
+    const BUDGET = 100; 
+    let balance = BUDGET;
+    let co2_sum = 0;
+    let cart = {}; 
+    let active_cat = "全部";
+
+    const jsPsych = initJsPsych({
+        on_finish: () => { saveData(); }
+    });
+
+    // --- 3. 试次一：首页 (人口统计) ---
+    const home_step = {
+        type: jsPsychSurveyHtmlForm,
+        html: `
+            <div class="iphone-frame">
+                <div class="apple-home">
+                    <h1>Green Choice.</h1>
+                    <p><b>月末最后一周情景模拟：</b><br>当前您的账户余款仅剩伙食费 <span style="color:#000; font-weight:800;">¥${BUDGET}</span>。请根据您的真实需求选购必需品。</p>
+                    <div class="form-group">
+                        <label>性别</label>
+                        <select name="gender" class="apple-select" required><option value="">请选择</option><option value="男">男</option><option value="女">女</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>专业背景</label>
+                        <select name="major" class="apple-select" required>
+                            <option value="">请选择</option><option value="理工类">理工类</option><option value="经管类">经管类</option>
+                            <option value="文法类">文法类</option><option value="艺体类">艺体类</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1"><label>年级</label><select name="grade" class="apple-select" required><option value="">选择</option><option value="1">大一</option><option value="2">大二</option><option value="3">大三</option><option value="4">大四</option></select></div>
+                        <div class="form-group" style="flex:1"><label>生活费区间</label><select name="fund" class="apple-select" required><option value="">选择</option><option value="<1500"><1500元</option><option value="1500-2500">1500-2500元</option><option value=">2500">>2500元</option></select></div>
+                    </div>
+                    <div style="margin-top:auto; padding-bottom:15px;"><button class="action-btn" style="width:100%;">开始模拟选购</button></div>
+                </div>
+                <div class="admin-entry" onclick="adminAuth()">SYSTEM ADMINISTRATION</div>
+            </div>`,
+        on_load: () => { window.adminAuth = () => { if(prompt("Auth Password:") === "8888") renderDashboard(); }; }
+    };
+
+    // --- 4. 试次二：分类选购 ---
+    const shop_step = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: () => {
+            return `
+            <div class="iphone-frame">
+                <div class="glass-nav">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+                        <span style="font-size:11px; font-weight:700; color:#86868b;">余额 ¥<span id="ui-bal">${balance}</span></span>
+                        <span style="font-size:11px; font-weight:700; color:var(--apple-green)">👣 <span id="ui-co2">0</span>g CO2e</span>
+                    </div>
+                    <div class="cat-row">
+                        ${CATEGORIES.map(c => `<button class="cat-tag ${c===active_cat?'active':''}" onclick="setCat('${c}')">${c}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="mall-body">
+                    <div class="grid" id="p-grid">${buildGrid()}</div>
+                </div>
+                <div style="padding:15px 30px 35px; border-top:0.5px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:13px; font-weight:600;">已选: <span id="ui-qty">0</span>件</div>
+                    <button class="action-btn" style="padding:12px 22px; font-size:13px;" onclick="jsPsych.finishTrial()">去结算</button>
+                </div>
+            </div>`;
+        },
+        choices: "NO_KEYS",
+        on_load: () => {
+            window.setCat = (c) => {
+                active_cat = c;
+                document.getElementById('p-grid').innerHTML = buildGrid();
+                document.querySelectorAll('.cat-tag').forEach(tag => tag.classList.toggle('active', tag.innerText === c));
+            };
+            window.updateCart = (id, delta) => {
+                const p = INVENTORY.find(x => x.id === id);
+                if (delta > 0 && balance < p.p) { alert("预算余额不足"); return; }
+                if (!cart[id]) cart[id] = { q: 0, p: p.p, co2: p.co2, eco: p.eco, name: p.name };
+                if (delta < 0 && cart[id].q <= 0) return;
+
+                cart[id].q += delta;
+                balance = (parseFloat(balance) - (p.p * delta)).toFixed(1);
+                co2_sum += (p.co2 * delta);
+
+                document.getElementById('ui-bal').innerText = balance;
+                document.getElementById('ui-co2').innerText = co2_sum;
+                document.getElementById('ui-qty').innerText = Object.values(cart).reduce((s,x)=>s+x.q, 0);
+                const qDisplay = document.getElementById(`qty-${id}`);
+                qDisplay.innerText = cart[id].q;
+                qDisplay.style.visibility = cart[id].q > 0 ? 'visible' : 'hidden';
+            };
+        }
+    };
+
+    function buildGrid() {
+        const list = active_cat === "全部" ? INVENTORY : INVENTORY.filter(x => x.cat === active_cat);
+        return list.map(p => `
+            <div class="p-card">
+                <img src="${p.img}" class="p-img" loading="lazy">
+                ${p.eco ? '<span style="color:var(--apple-green); font-size:9px; font-weight:700;">🌿 低碳认证</span>' : '<div style="height:12px"></div>'}
+                <div class="p-title">${p.name}</div>
+                <div class="p-meta">${p.f} | ${p.w}</div>
+                <div style="font-size:9px; color:#999; margin-bottom:10px;">👣 碳排放 ${p.co2}g</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+                    <span style="font-weight:700;">¥${p.p}</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span id="qty-${p.id}" style="font-size:11px; font-weight:700; visibility:hidden;">0</span>
+                        <button onclick="updateCart('${p.id}', 1)" style="border:none; background:#000; color:#fff; border-radius:50%; width:22px; height:22px; cursor:pointer;">+</button>
+                        <button onclick="updateCart('${p.id}', -1)" style="border:none; background:#eee; border-radius:50%; width:22px; height:22px; cursor:pointer;">-</button>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    // --- 5. 试次三：真挚感谢与电子小票 ---
+    const thanks_step = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: () => {
+            const purchasedItems = Object.values(cart).filter(x => x.q > 0);
+            let itemsHtml = purchasedItems.map(item => `
+                <div class="receipt-item">
+                    <span>${item.name} x${item.q}</span>
+                    <span>¥${(item.p * item.q).toFixed(1)}</span>
+                </div>`).join('');
+
+            return `
+            <div class="iphone-frame">
+                <div class="receipt-view">
+                    <div class="receipt-header">
+                        <h2 style="margin:0;">结账清单</h2>
+                        <p style="font-size:12px; color:#86868b; margin-top:5px;">交易日期: ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    <div id="items-list">${itemsHtml || '<p style="color:#999;">未选购商品</p>'}</div>
+                    
+                    <div class="receipt-total">
+                        <div class="receipt-item"><span>初始预算</span><span>¥${BUDGET.toFixed(1)}</span></div>
+                        <div class="receipt-item"><span>本次消费</span><span style="font-weight:700;">- ¥${(BUDGET - balance).toFixed(1)}</span></div>
+                        <div class="receipt-item" style="color:var(--apple-blue); font-weight:800; font-size:18px; margin-top:10px;">
+                            <span>剩余结余</span><span>¥${balance}</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:40px; text-align:center;">
+                        <h3 style="color:var(--apple-green);">感谢参与。</h3>
+                        <p style="color:#86868b; line-height:1.7; font-size:14px;">
+                            您的每一份模拟决策，都在为我们理解大学生绿色生活观念提供宝贵参考，并助力构建可持续校园未来。
+                        </p>
+                    </div>
+                </div>
+            </div>`;
+        },
+        choices: ['完成实验并退出']
+    };
+
+    function saveData() {
+        const info = jsPsych.data.get().filter({trial_type: 'survey-html-form'}).values()[0].response;
+        const results = {
+            ...info,
+            spent: (BUDGET - balance).toFixed(1),
+            co2: co2_sum,
+            green_count: Object.values(cart).filter(x => x.eco).reduce((s,x)=>s+x.q, 0),
+            total_items: Object.values(cart).reduce((s,x)=>s+x.q, 0),
+            date: new Date().toLocaleString()
+        };
+        let h = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        h.push(results);
+        localStorage.setItem(DB_KEY, JSON.stringify(h));
+    }
+
+    function renderDashboard() {
+        const data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        document.body.innerHTML = `<div style="padding:40px; background:#fff; width:90%; border-radius:20px;">
+            <h2>📊 研究统计后台 (v15)</h2>
+            <table width="100%" border="1" style="border-collapse:collapse; text-align:center;">
+                <tr style="background:#f5f5f7"><th>时间</th><th>性别</th><th>专业</th><th>生活费</th><th style="color:var(--apple-blue)">消费(¥)</th><th>碳排</th></tr>
+                ${data.reverse().map(d => `<tr><td>${d.date}</td><td>${d.gender}</td><td>${d.major}</td><td>${d.fund}</td><td>${d.spent}</td><td>${d.co2}g</td></tr>`).join('')}
+            </table>
+            <br><button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">返回首页</button>
+        </div>`;
+    }
+
+    jsPsych.run([home_step, shop_step, thanks_step]);
+</script>
+</body>
+</html>
