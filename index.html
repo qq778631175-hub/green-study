@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园消费决策研究系统 v27 - 完整修正版</title>
+    
+    <script src="https://unpkg.com/jspsych@7.3.3"></script>
+    <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+
+    <style>
+        :root {
+            --apple-bg: #ffffff;
+            --apple-green: #34c759;
+            --apple-text: #1d1d1f;
+            --apple-sub: #86868b;
+            --apple-blue: #0071e3;
+            --glass-bg: rgba(255, 255, 255, 0.98);
+            --border: #d2d2d7;
+            --card-bg: #fbfbfd;
+        }
+
+        body {
+            background-color: #f2f2f7;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif;
+            color: var(--apple-text); margin: 0; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+        }
+
+        .iphone-frame {
+            width: 440px;
+            height: 95vh; background: var(--apple-bg);
+            border-radius: 44px; border: 11px solid #1c1c1e;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.22);
+            display: flex; flex-direction: column;
+            overflow: hidden; position: relative;
+        }
+
+        /* 强制隐藏 jsPsych 默认生成的外部 Continue 按钮  */
+        .jspsych-btn, #jspsych-survey-html-form-next {
+            display: none !important;
+        }
+
+        .admin-entry { position: absolute; bottom: 15px; left: 0; right: 0; text-align: center;
+            font-size: 10px; color: #e2e2e7; cursor: pointer; z-index: 50; }
+
+        .home-page { padding: 40px 35px;
+            text-align: left; flex: 1; display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .home-page h1 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -1.2px;
+        }
+        .home-page p { font-size: 14px; color: var(--apple-sub); margin: 10px 0 25px;
+            line-height: 1.5; }
+
+        .form-row { margin-bottom: 12px;
+        }
+        .form-row label { display: block; font-size: 11px; font-weight: 600; color: var(--apple-sub);
+            margin-bottom: 4px; text-transform: uppercase; }
+        .apple-input { width: 100%; padding: 12px; border-radius: 12px;
+            border: 1px solid var(--border); background: #f5f5f7; font-size: 14px; outline: none;
+        }
+
+        .glass-header { background: var(--glass-bg); backdrop-filter: saturate(180%) blur(25px); padding: 45px 20px 10px;
+            position: sticky; top: 0; z-index: 100; border-bottom: 0.5px solid #eee;
+        }
+        .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0;
+            scrollbar-width: none; }
+        .cat-tag { padding: 7px 15px; border-radius: 18px; background: #e8e8ed;
+            border: none; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+        }
+        .cat-tag.active { background: #000; color: #fff;
+        }
+
+        .mall-list { flex: 1; overflow-y: auto; padding: 15px; background: #fff;
+        }
+        .p-card { background: var(--card-bg); border-radius: 20px; padding: 18px; border: 0.5px solid #efeff4;
+            display: flex; flex-direction: column; margin-bottom: 15px; }
+        .eco-label { background: #e8f5e9; color: var(--apple-green);
+            font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; width: fit-content; margin-bottom: 8px;
+        }
+        .p-name { font-size: 17px; font-weight: 700; margin-bottom: 8px;
+        }
+        .p-info { font-size: 12px; border-top: 0.5px solid #e5e5e7; padding-top: 10px;
+        }
+        .p-row { display: flex; margin-bottom: 5px; line-height: 1.4;
+        }
+        .p-label { color: var(--apple-sub); min-width: 65px; font-weight: 500;
+        }
+        .co2-tag { font-weight: 700; color: var(--apple-text); font-size: 11px; margin-top: 8px;
+        }
+        .price-footer { margin-top: 15px; display: flex; justify-content: space-between; align-items: center;
+            border-top: 0.5px dashed #d2d2d7; padding-top: 12px; }
+        .price-val { font-size: 19px; font-weight: 800;
+        }
+        .qty-box { display: flex; align-items: center; gap: 10px;
+        }
+        .btn-qty { width: 30px; height: 30px; border-radius: 50%; border: none; background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; }
+
+        .action-bar { padding: 15px 30px 35px;
+            border-top: 0.5px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn-primary { background: #000; color: #fff; border: none; padding: 14px 28px;
+            border-radius: 16px; font-weight: 600; cursor: pointer; font-size: 15px; }
+
+        .receipt-view { padding: 30px;
+            text-align: left; overflow-y: auto; flex: 1; }
+        .receipt-header { border-bottom: 2px solid #1d1d1f;
+            padding-bottom: 15px; margin-bottom: 20px; }
+        .receipt-item { display: flex; justify-content: space-between; font-size: 14px;
+            margin-bottom: 10px; }
+        .receipt-total { border-top: 0.5px solid #d2d2d7; margin-top: 20px; padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="jspsych-target"></div>
+
+<script>
+    // --- 1. 完整录入 240 项商品数据库 [cite: 44-105] ---
+    const CATEGORIES = ["全部", "饮品", "零食", "速食", "个护", "百货", "文具", "水果"];
+    const FULL_INVENTORY = [
+        { n: "农夫山泉饮用天然水", c: "饮品", w: "550ml", p: 2.0, eco: false, co2: 120, i: "天然矿泉水", f: "经典红瓶，长途运输" },
+        { n: "怡宝纯净水", c: "饮品", w: "555ml", p: 2.0, eco: false, co2: 115, i: "反渗透纯净水", f: "高纯度过滤" },
+        { n: "某品牌平价纯净水", c: "饮品", w: "550ml", p: 1.0, eco: false, co2: 140, i: "过滤自来水", f: "极致性价比" },
+        { n: "农夫山泉rPET环保包装水", c: "饮品", w: "550ml", p: 3.5, eco: true, co2: 35, i: "再生塑料(rPET)", f: "🌿 减少原生塑料消耗" },
+        { n: "可口可乐", c: "饮品", w: "500ml", p: 3.5, eco: false, co2: 185, i: "糖、焦糖色、水", f: "经典配方，高能耗生产" },
+        { n: "无糖可口可乐", c: "饮品", w: "500ml", p: 3.5, eco: true, co2: 55, i: "阿斯巴甜、水", f: "🌿 0糖0能量" },
+        { n: "某地方品牌可乐", c: "饮品", w: "500ml", p: 2.5, eco: false, co2: 160, i: "果葡糖浆、香精", f: "平价替代" },
+        { n: "元气森林白桃气泡水", c: "饮品", w: "480ml", p: 5.5, eco: true, co2: 48, i: "赤藓糖醇", f: "🌿 健康轻负担" },
+        { n: "维他柠檬茶", c: "饮品", w: "250ml", p: 3.5, eco: false, co2: 110, i: "红茶萃取、糖", f: "经典口味" },
+        { n: "有机低温萃取柠檬茶", c: "饮品", w: "250ml", p: 8.0, eco: true, co2: 25, i: "有机红茶、有机柠檬", f: "🌿 有机认证，低温工艺" },
+        { n: "康师傅冰红茶", c: "饮品", w: "500ml", p: 3.0, eco: false, co2: 135, i: "红茶粉、柠檬酸、糖", f: "大众选择" },
+        { n: "统一绿茶", c: "饮品", w: "500ml", p: 3.0, eco: false, co2: 120, i: "绿茶粉、糖", f: "清新爽口" },
+        { n: "东方树叶乌龙茶", c: "饮品", w: "500ml", p: 5.5, eco: true, co2: 38, i: "水、乌龙茶叶", f: "🌿 无糖，原茶萃取" },
+        { n: "三得利黑乌龙茶", c: "饮品", w: "350ml", p: 6.5, eco: true, co2: 42, i: "特种乌龙、茶多酚", f: "🌿 辅助减脂感" },
+        { n: "特仑苏纯牛奶", c: "饮品", w: "250ml", p: 5.5, eco: false, co2: 240, i: "生牛乳", f: "高蛋白甄选" },
+        { n: "伊利纯牛奶", c: "饮品", w: "250ml", p: 3.5, eco: false, co2: 210, i: "生牛乳", f: "国民日常款" },
+        { n: "散装牧场牛奶", c: "饮品", w: "250ml", p: 2.8, eco: false, co2: 180, i: "生牛乳", f: "简易包装" },
+        { n: "OATLY燕麦奶", c: "饮品", w: "250ml", p: 10.5, eco: true, co2: 30, i: "有机燕麦、植物基", f: "🌿 极低环境足迹替代乳" },
+        { n: "维他奶原味豆奶", c: "饮品", w: "250ml", p: 3.0, eco: true, co2: 45, i: "大豆、水、糖", f: "🌿 植物蛋白" },
+        { n: "冰露轻量瓶纯净水", c: "饮品", w: "550ml", p: 1.5, eco: true, co2: 75, i: "纯净水", f: "🌿 减塑瓶身设计" },
+        { n: "红牛维生素饮料", c: "饮品", w: "250ml", p: 6.0, eco: false, co2: 190, i: "牛磺酸、咖啡因", f: "提神醒脑" },
+        { n: "东鹏特饮", c: "饮品", w: "250ml", p: 3.5, eco: false, co2: 165, i: "维生素、咖啡因", f: "性价比功能饮" },
+        { n: "宝矿力水特", c: "饮品", w: "500ml", p: 5.5, eco: false, co2: 145, i: "电解质、水", f: "运动补水" },
+        { n: "脉动青柠味", c: "饮品", w: "600ml", p: 4.5, eco: false, co2: 155, i: "维生素、水", f: "解渴状态" },
+        { n: "美汁源果粒橙", c: "饮品", w: "420ml", p: 4.0, eco: false, co2: 175, i: "橙汁、橙肉", f: "真果粒感" },
+        { n: "汇源100%果汁", c: "饮品", w: "200ml", p: 4.5, eco: false, co2: 140, i: "浓缩果汁", f: "老牌品质" },
+        { n: "有机100%冷压果汁", c: "饮品", w: "200ml", p: 12.0, eco: true, co2: 35, i: "有机非浓缩还原果汁", f: "🌿 零添加，全程冷链" },
+        { n: "雀巢丝滑拿铁", c: "饮品", w: "268ml", p: 6.5, eco: false, co2: 180, i: "咖啡粉、乳粉", f: "即饮便利" },
+        { n: "贝纳颂咖啡", c: "饮品", w: "250ml", p: 7.5, eco: false, co2: 165, i: "阿拉比卡咖啡豆", f: "醇厚风味" },
+        { n: "雨林联盟认证速溶咖啡", c: "饮品", w: "10包/盒", p: 25.0, eco: true, co2: 28, i: "可持续耕作咖啡豆", f: "🌿 保护生物多样性认证" },
+        { n: "阿萨姆奶茶", c: "饮品", w: "500ml", p: 4.5, eco: false, co2: 155, i: "红茶、奶粉", f: "醇香顺滑" },
+        { n: "香飘飘杯装奶茶", c: "饮品", w: "80g", p: 5.5, eco: false, co2: 195, i: "植脂末、糖", f: "加热即饮" },
+        { n: "兰芳园丝袜奶茶", c: "饮品", w: "280ml", p: 12.0, eco: false, co2: 145, i: "牛奶、红茶", f: "港式地道" },
+        { n: "圣培露矿泉水", c: "饮品", w: "500ml", p: 12.0, eco: false, co2: 450, i: "天然矿泉水", f: "长途进口，高端佐餐" },
+        { n: "纯甄酸奶", c: "饮品", w: "200g", p: 5.0, eco: false, co2: 185, i: "生牛乳、乳酸菌", f: "浓稠型" },
+        { n: "安慕希酸奶", c: "饮品", w: "205g", p: 5.5, eco: false, co2: 190, i: "生牛乳", f: "常温便捷" },
+        { n: "卡士0糖酸奶", c: "饮品", w: "100g", p: 9.0, eco: true, co2: 65, i: "生牛乳、代糖", f: "🌿 高端无糖系列" },
+        { n: "青岛啤酒", c: "饮品", w: "330ml", p: 5.0, eco: false, co2: 280, i: "麦芽、啤酒花", f: "聚会必备" },
+        { n: "RIO鸡尾酒", c: "饮品", w: "275ml", p: 13.0, eco: false, co2: 310, i: "伏特加、果汁", f: "微醺体验" },
+        { n: "农夫山泉大桶水", c: "饮品", w: "4L", p: 10.0, eco: true, co2: 25, i: "天然水", f: "🌿 宿舍共用，单位排碳极低" },
+
+        // 二、休闲零食类 (40种)
+        { n: "乐事原味薯片", c: "零食", w: "70g", p: 7.5, eco: false, co2: 195, i: "马铃薯、植物油", f: "经典薄脆" },
+        { n: "上好佳虾条", c: "零食", w: "80g", p: 5.0, eco: false, co2: 140, i: "小麦粉、虾肉", f: "鲜香酥脆" },
+        { n: "某白牌散装薯片", c: "零食", w: "100g", p: 4.5, eco: false, co2: 210, i: "马铃薯粉", f: "高性价比" },
+        { n: "非油炸有机薯片", c: "零食", w: "60g", p: 15.0, eco: true, co2: 45, i: "有机马铃薯、橄榄油", f: "🌿 低温烘焙，有机认证" },
+        { n: "卫龙大面筋", c: "零食", w: "106g", p: 5.0, eco: false, co2: 110, i: "小麦粉、油", f: "国民解馋" },
+        { n: "某廉价辣条", c: "零食", w: "60g", p: 1.5, eco: false, co2: 135, i: "面粉、香精", f: "极致平价" },
+        { n: "奥利奥夹心饼干", c: "零食", w: "116g", p: 7.5, eco: false, co2: 175, i: "小麦粉、可可粉", f: "扭一扭舔一舔" },
+        { n: "百奇巧克力棒", c: "零食", w: "50g", p: 6.5, eco: false, co2: 140, i: "小麦粉、代可可脂", f: "休闲时光" },
+        { n: "三只松鼠每日坚果", c: "零食", w: "25g", p: 6.0, eco: true, co2: 55, i: "核桃、腰果", f: "🌿 科学配比" },
+        { n: "公平贸易认证混合坚果", c: "零食", w: "25g", p: 9.5, eco: true, co2: 18, i: "可持续果仁", f: "🌿 尊重原产地劳动者" },
+        { n: "徐福记酥心糖", c: "零食", w: "100g", p: 6.0, eco: false, co2: 115, i: "花生酱、糖", f: "经典年味" },
+        { n: "大白兔奶糖", c: "零食", w: "114g", p: 9.0, eco: false, co2: 130, i: "乳制品、糖", f: "童年回忆" },
+        { n: "阿尔卑斯棒棒糖", c: "零食", w: "10g", p: 1.0, eco: false, co2: 45, i: "糖、香精", f: "甜蜜奖赏" },
+        { n: "炫迈口香糖", c: "零食", w: "13.5g", p: 5.0, eco: false, co2: 85, i: "胶基、代糖", f: "根本停不下来" },
+        { n: "好丽友派", c: "零食", w: "30g", p: 2.5, eco: false, co2: 95, i: "代可可脂", f: "好基友一辈子" },
+        { n: "趣多多曲奇", c: "零食", w: "85g", p: 6.5, eco: false, co2: 125, i: "巧克力豆", f: "美式风味" },
+        { n: "达利园蛋黄派", c: "零食", w: "25g", p: 1.5, eco: false, co2: 110, i: "鸡蛋、小麦粉", f: "便利早餐" },
+        { n: "劲仔小鱼干", c: "零食", w: "12g", p: 1.5, eco: false, co2: 65, i: "小鱼、辣椒", f: "鲜辣解馋" },
+        { n: "双汇火腿肠", c: "零食", w: "40g", p: 2.0, eco: false, co2: 145, i: "肉类、淀粉", f: "泡面伴侣" },
+        { n: "植物蛋白模拟肉干", c: "零食", w: "30g", p: 8.0, eco: true, co2: 32, i: "大豆蛋白", f: "🌿 植物基减碳选择" },
+        { n: "无穷盐焗蛋", c: "零食", w: "30g", p: 3.0, eco: false, co2: 80, i: "鸡蛋", f: "风味卤制" },
+        { n: "泡椒凤爪", c: "零食", w: "80g", p: 6.5, eco: false, co2: 210, i: "鸡爪、野山椒", f: "劲辣十足" },
+        { n: "溜溜梅", c: "零食", w: "60g", p: 5.5, eco: false, co2: 85, i: "梅子", f: "没事吃溜溜梅" },
+        { n: "有机去核红枣", c: "零食", w: "100g", p: 18.0, eco: true, co2: 35, i: "有机红枣", f: "🌿 生态种植补血" },
+        { n: "旺旺雪饼", c: "零食", w: "84g", p: 6.0, eco: false, co2: 110, i: "大米、糖", f: "脆香回忆" },
+        { n: "波力海苔", c: "零食", w: "11g", p: 7.0, eco: false, co2: 65, i: "海苔、调味", f: "健康轻食" },
+        { n: "喜之郎果冻", c: "零食", w: "200g", p: 3.5, eco: false, co2: 120, i: "果汁、卡拉胶", f: "水晶质感" },
+        { n: "士力架巧克力", c: "零食", w: "51g", p: 5.0, eco: false, co2: 220, i: "花生、代可可脂", f: "横扫饥饿" },
+        { n: "德芙牛奶巧", c: "零食", w: "43g", p: 9.0, eco: false, co2: 210, i: "可可脂、乳脂", f: "丝般顺滑" },
+        { n: "70%可持续黑巧", c: "零食", w: "40g", p: 18.0, eco: true, co2: 45, i: "可持续可可豆", f: "🌿 环境友好产地" },
+        { n: "康师傅3+2", c: "零食", w: "125g", p: 5.5, eco: false, co2: 135, i: "小麦粉、夹心", f: "层层美味" },
+        { n: "洽洽香瓜子", c: "零食", w: "150g", p: 8.0, eco: false, co2: 75, i: "葵花籽、盐", f: "经典炒货" },
+        { n: "散装原味瓜子", c: "零食", w: "150g", p: 5.0, eco: false, co2: 65, i: "葵花籽", f: "朴实风味" },
+        { n: "黄飞红麻辣花生", c: "零食", w: "70g", p: 5.5, eco: false, co2: 110, i: "花生、辣椒", f: "酒友必选" },
+        { n: "良品铺子芒果干", c: "零食", w: "60g", p: 10.0, eco: false, co2: 120, i: "芒果、糖", f: "厚切口感" },
+        { n: "零添加天然芒果干", c: "零食", w: "60g", p: 16.0, eco: true, co2: 25, i: "无硫熏干芒果", f: "🌿 原始烘干，0添加" },
+        { n: "友臣肉松饼", c: "零食", w: "35g", p: 2.5, eco: false, co2: 95, i: "肉松、面粉", f: "扎实馅料" },
+        { n: "港荣蒸蛋糕", c: "零食", w: "35g", p: 2.0, eco: false, co2: 85, i: "鸡蛋、面粉", f: "清淡不上火" },
+        { n: "明治雪糕", c: "零食", w: "40g", p: 8.0, eco: false, co2: 210, i: "牛乳、巧", f: "高品质冷饮" },
+        { n: "五羊牌甜筒", c: "零食", w: "60g", p: 4.0, eco: false, co2: 165, i: "代可可脂、面", f: "童年滋味" },
+
+        // 三、即食速食与早餐类 (40种)
+        { n: "康师傅红烧牛肉面", c: "速食", w: "105g", p: 5.0, eco: false, co2: 215, i: "油炸面饼", f: "经典宿舍款" },
+        { n: "袋装方便面", c: "速食", w: "80g", p: 2.0, eco: false, co2: 180, i: "油炸面饼", f: "高性价比" },
+        { n: "非油炸全麦方便面", c: "速食", w: "85g", p: 8.5, eco: true, co2: 45, i: "全麦粉、非油炸", f: "🌿 低温慢烘，纸箱包装" },
+        { n: "汤达人豚骨面", c: "速食", w: "125g", p: 7.5, eco: false, co2: 230, i: "浓缩汤底", f: "一口好汤" },
+        { n: "老坛酸菜牛肉面", c: "速食", w: "120g", p: 5.5, eco: false, co2: 215, i: "酸菜包", f: "酸爽带劲" },
+        { n: "李子柒螺蛳粉", c: "速食", w: "335g", p: 13.0, eco: false, co2: 320, i: "米粉、酸笋", f: "地道柳州味" },
+        { n: "嗨吃家酸辣粉", c: "速食", w: "140g", p: 7.0, eco: false, co2: 165, i: "红薯粉", f: "Q弹酸爽" },
+        { n: "海底捞自热火锅", c: "速食", w: "435g", p: 38.0, eco: false, co2: 550, i: "牛肉、蔬菜、发热包", f: "厚重塑料，高废弃物" },
+        { n: "植物肉自热米饭", c: "速食", w: "300g", p: 28.0, eco: true, co2: 65, i: "大豆蛋白肉", f: "🌿 0塑发热包，植物基" },
+        { n: "自嗨锅自热米饭", c: "速食", w: "260g", p: 18.0, eco: false, co2: 480, i: "肉包", f: "露营神器" },
+        { n: "娃哈哈八宝粥", c: "速食", w: "360g", p: 4.5, eco: false, co2: 145, i: "糯米、红豆", f: "随时开启" },
+        { n: "银鹭好粥道", c: "速食", w: "280g", p: 5.0, eco: false, co2: 135, i: "黑米、核桃", f: "均衡营养" },
+        { n: "有机五谷即食粥", c: "速食", w: "280g", p: 12.0, eco: true, co2: 35, i: "有机黑米、燕麦", f: "🌿 有机种植谷物" },
+        { n: "双汇玉米肠", c: "速食", w: "40g", p: 2.0, eco: false, co2: 110, i: "鸡肉、玉米", f: "脆甜口" },
+        { n: "即食低脂鸡胸肉", c: "速食", w: "100g", p: 8.0, eco: true, co2: 85, i: "鸡胸肉、盐", f: "🌿 健身友好" },
+        { n: "桃李切片面包", c: "速食", w: "300g", p: 8.5, eco: false, co2: 145, i: "小麦粉", f: "软糯早餐" },
+        { n: "散装吐司", c: "速食", w: "200g", p: 5.0, eco: false, co2: 155, i: "人造奶油", f: "基础款" },
+        { n: "全麦手工面包", c: "速食", w: "200g", p: 15.0, eco: true, co2: 40, i: "全麦粉、无糖", f: "🌿 粗粮纤维，手工慢焙" },
+        { n: "华夫饼", c: "速食", w: "35g", p: 2.0, eco: false, co2: 95, i: "鸡蛋、面", f: "格纹诱惑" },
+        { n: "瑞士卷", c: "速食", w: "25g", p: 1.5, eco: false, co2: 85, i: "鸡蛋、面", f: "绵密口感" },
+        { n: "冷藏三明治", c: "速食", w: "150g", p: 10.0, eco: false, co2: 240, i: "面包、火腿", f: "新鲜冷链" },
+        { n: "饭团", c: "速食", w: "100g", p: 6.0, eco: false, co2: 180, i: "米饭、海苔", f: "便利店爆款" },
+        { n: "老干妈风味豆豉", c: "速食", w: "280g", p: 12.0, eco: false, co2: 320, i: "大豆、辣椒", f: "拌饭神器" },
+        { n: "乌江榨菜", c: "速食", w: "80g", p: 2.5, eco: false, co2: 110, i: "芥菜、盐", f: "爽口开胃" },
+        { n: "低盐有机榨菜", c: "速食", w: "70g", p: 6.0, eco: true, co2: 25, i: "有机芥菜、减盐", f: "🌿 健康轻食调味" },
+        { n: "饭扫光野香菌", c: "速食", w: "200g", p: 15.0, eco: false, co2: 280, i: "食用菌", f: "鲜香下饭" },
+        { n: "SPAM午餐肉", c: "速食", w: "198g", p: 18.0, eco: false, co2: 450, i: "猪肉、淀粉", f: "煎烤更佳" },
+        { n: "甘竹豆豉绫鱼", c: "速食", w: "227g", p: 16.0, eco: false, co2: 380, i: "绫鱼、豆豉", f: "广东名产" },
+        { n: "桂格燕麦片", c: "速食", w: "400g", p: 15.0, eco: true, co2: 45, i: "纯燕麦", f: "🌿 粗粮慢升糖" },
+        { n: "FSC认证有机燕麦", c: "速食", w: "400g", p: 28.0, eco: true, co2: 15, i: "有机燕麦", f: "🌿 可持续森林资源包装" },
+        { n: "南方黑芝麻糊", c: "速食", w: "40g*9", p: 18.0, eco: false, co2: 145, i: "黑芝麻", f: "暖胃经典" },
+        { n: "雀巢咖啡奶粉", c: "速食", w: "15g*20", p: 25.0, eco: false, co2: 180, i: "植脂末、糖", f: "提神时刻" },
+        { n: "立顿红茶包", c: "速食", w: "2g*25", p: 15.0, eco: false, co2: 65, i: "红茶", f: "便捷袋泡" },
+        { n: "可持续认证绿茶包", c: "速食", w: "2g*25", p: 22.0, eco: true, co2: 12, i: "可持续绿茶", f: "🌿 雨林联盟认证产地" },
+        { n: "王守义十三香", c: "速食", w: "45g", p: 5.0, eco: false, co2: 45, i: "香辛料", f: "家庭常备" },
+        { n: "海天金标生抽", c: "速食", w: "500ml", p: 9.0, eco: false, co2: 120, i: "大豆、小麦", f: "咸鲜调味" },
+        { n: "有机非转生抽", c: "速食", w: "500ml", p: 25.0, eco: true, co2: 25, i: "有机大豆", f: "🌿 有机豆种，传统发酵" },
+        { n: "恒顺香醋", c: "速食", w: "500ml", p: 8.0, eco: false, co2: 110, i: "糯米、水", f: "正宗陈酿" },
+        { n: "太太乐鸡精", c: "速食", w: "100g", p: 6.0, eco: false, co2: 95, i: "鸡肉粉", f: "提鲜增味" },
+        { n: "笑口牌食用盐", c: "速食", w: "400g", p: 2.5, eco: false, co2: 35, i: "氯化钠", f: "百味之王" },
+
+        // 四、个人护理与美妆 (30种)
+        { n: "黑人牙膏", c: "个护", w: "90g", p: 12.0, eco: false, co2: 120, i: "水合硅石", f: "美白呵护" },
+        { n: "高露洁草本", c: "个护", w: "90g", p: 10.0, eco: false, co2: 110, i: "草本提取", f: "温和抗敏" },
+        { n: "白牌牙膏", c: "个护", w: "80g", p: 4.0, eco: false, co2: 140, i: "碳酸钙", f: "超值价" },
+        { n: "天然有机牙膏", c: "个护", w: "80g", p: 35.0, eco: true, co2: 25, i: "有机精油", f: "🌿 天然成分，铝管回收" },
+        { n: "黑人牙刷", c: "个护", w: "1支", p: 8.0, eco: false, co2: 85, i: "PP、尼龙", f: "标准设计" },
+        { n: "超值装牙刷", c: "个护", w: "3支", p: 6.0, eco: false, co2: 120, i: "普通塑料", f: "宿舍备用" },
+        { n: "可降解竹牙刷", c: "个护", w: "1支", p: 18.0, eco: true, co2: 12, i: "原竹柄", f: "🌿 0塑，可降解环保" },
+        { n: "海飞丝洗发水", c: "个护", w: "200ml", p: 25.0, eco: false, co2: 240, i: "ZPT成分", f: "去屑实力" },
+        { n: "清扬男士洗发", c: "个护", w: "175ml", p: 22.0, eco: false, co2: 210, i: "薄荷成分", f: "劲爽控油" },
+        { n: "二合一环保洗沐", c: "个护", w: "200ml", p: 55.0, eco: true, co2: 45, i: "植物表活", f: "🌿 生物降解，简化瓶身" },
+        { n: "多芬沐浴露", c: "个护", w: "400ml", p: 29.0, eco: false, co2: 320, i: "氨基酸表活", f: "滋润亲肤" },
+        { n: "老牌香皂", c: "个护", w: "100g", p: 4.5, eco: false, co2: 95, i: "脂肪酸钠", f: "去油力强" },
+        { n: "手工天然皂", c: "个护", w: "100g", p: 30.0, eco: true, co2: 15, i: "植物油", f: "🌿 纯手工，0化学添加" },
+        { n: "洗手液", c: "个护", w: "225ml", p: 15.0, eco: false, co2: 145, i: "抑菌成分", f: "清爽洁净" },
+        { n: "七度空间卫生巾", c: "个护", w: "10片", p: 12.0, eco: false, co2: 160, i: "棉柔表层", f: "常规款" },
+        { n: "护舒宝液体巾", c: "个护", w: "10片", p: 28.0, eco: false, co2: 210, i: "FlexFoam", f: "超薄无感" },
+        { n: "有机棉卫生巾", c: "个护", w: "10片", p: 35.0, eco: true, co2: 35, i: "有机棉", f: "🌿 生态材质，可自然降解" },
+        { n: "吉列剃须刀", c: "个护", w: "2把", p: 10.0, eco: false, co2: 85, i: "不锈钢", f: "一次性" },
+        { n: "男士洗面奶", c: "个护", w: "100g", p: 25.0, eco: false, co2: 180, i: "矿物泥", f: "深层清洁" },
+        { n: "大宝SOD蜜", c: "个护", w: "100ml", p: 12.0, eco: false, co2: 120, i: "SOD、甘油", f: "老友品质" },
+        { n: "曼秀雷敦唇膏", c: "个护", w: "4g", p: 25.0, eco: false, co2: 85, i: "凡士林", f: "润泽止渴" },
+        { n: "碧柔防晒霜", c: "个护", w: "50g", p: 55.0, eco: false, co2: 310, i: "化学防晒剂", f: "清透防护" },
+        { n: "海洋友好防晒", c: "个护", w: "50g", p: 120.0, eco: true, co2: 55, i: "氧化锌", f: "🌿 保护珊瑚，物理防晒" },
+        { n: "蛇油护手霜", c: "个护", w: "50g", p: 6.0, eco: false, co2: 75, i: "蛇油、甘油", f: "防冻裂" },
+        { n: "强生润肤露", c: "个护", w: "100ml", p: 20.0, eco: false, co2: 165, i: "矿物油", f: "全家共享" },
+        { n: "卸妆油", c: "个护", w: "100ml", p: 45.0, eco: false, co2: 220, i: "乳化剂", f: "净爽卸妆" },
+        { n: "依云喷雾", c: "个护", w: "50ml", p: 35.0, eco: false, co2: 450, i: "矿泉水", f: "长途进口，高碳足迹" },
+        { n: "云南白药创可贴", c: "个护", w: "10片", p: 6.0, eco: false, co2: 35, i: "药用布", f: "止血愈合" },
+        { n: "风油精", c: "个护", w: "9ml", p: 5.0, eco: false, co2: 45, i: "薄荷脑", f: "清凉驱蚊" },
+        { n: "六神驱蚊水", c: "个护", w: "100ml", p: 18.0, eco: false, co2: 145, i: "花露水提取", f: "夏日必选" },
+
+        // 五、日杂百货 (30种)
+        { n: "维达抽纸", c: "百货", w: "120抽", p: 3.5, eco: false, co2: 180, i: "原生木浆", f: "柔顺厚实" },
+        { n: "白牌抽纸", c: "百货", w: "100抽", p: 1.5, eco: false, co2: 210, i: "混合浆", f: "超低价" },
+        { n: "斑布竹浆纸", c: "百货", w: "100抽", p: 5.5, eco: true, co2: 45, i: "100%原生竹浆", f: "🌿 免漂白，低碳足迹" },
+        { n: "卷筒纸", c: "百货", w: "140g", p: 3.0, eco: false, co2: 165, i: "原生木浆", f: "日常必备" },
+        { n: "手帕纸", c: "百货", w: "10包/提", p: 6.5, eco: false, co2: 140, i: "原生木浆", f: "便携卫生" },
+        { n: "维达湿巾", c: "百货", w: "10抽", p: 2.5, eco: false, co2: 95, i: "水、无纺布", f: "即刻清洁" },
+        { n: "降解湿巾", c: "百货", w: "10抽", p: 6.0, eco: true, co2: 15, i: "植物纤维", f: "🌿 0塑，可降解" },
+        { n: "蓝月亮洗衣液", c: "百货", w: "500g", p: 15.0, eco: false, co2: 320, i: "表活剂", f: "深层洁净" },
+        { n: "散装洗衣粉", c: "百货", w: "500g", p: 6.0, eco: false, co2: 350, i: "LAS表活", f: "强力去渍" },
+        { n: "环保洗衣片", c: "百货", w: "20片", p: 35.0, eco: true, co2: 55, i: "生物酶", f: "🌿 减塑包装，浓缩环保" },
+        { n: "立白洗洁精", c: "百货", w: "500g", p: 8.0, eco: false, co2: 240, i: "去油表活", f: "去除油腻" },
+        { n: "超能洗衣皂", c: "百货", w: "200g", p: 5.0, eco: true, co2: 40, i: "椰油成分", f: "🌿 植物基去渍" },
+        { n: "妙洁垃圾袋", c: "百货", w: "30只", p: 6.0, eco: false, co2: 120, i: "PE材质", f: "耐用防漏" },
+        { n: "可降解垃圾袋", c: "百货", w: "20只", p: 15.0, eco: true, co2: 18, i: "PLA+PBAT", f: "🌿 环境友好，完全降解" },
+        { n: "一次性纸杯", c: "百货", w: "50个", p: 8.0, eco: false, co2: 280, i: "纸、PE膜", f: "聚会方便" },
+        { n: "环保PLA纸杯", c: "百货", w: "20个", p: 15.0, eco: true, co2: 35, i: "淀粉涂层", f: "🌿 可堆肥材质" },
+        { n: "天堂伞", c: "百货", w: "三折伞", p: 45.0, eco: false, co2: 420, i: "钢、碰击布", f: "耐用经典" },
+        { n: "长柄透明伞", c: "百货", w: "直柄", p: 15.0, eco: false, co2: 310, i: "塑料、铁", f: "便利美观" },
+        { n: "塑料拖鞋", c: "百货", w: "PVC", p: 15.0, eco: false, co2: 350, i: "PVC材质", f: "基础款" },
+        { n: "环保EVA拖鞋", c: "百货", w: "再生EVA", p: 25.0, eco: true, co2: 95, i: "再生材质", f: "🌿 轻量，资源回收" },
+        { n: "南孚5号电池", c: "百货", w: "2粒", p: 6.0, eco: false, co2: 240, i: "碱性电池", f: "持久动力" },
+        { n: "白牌5号电池", c: "百货", w: "2粒", p: 2.0, eco: false, co2: 280, i: "碳性电池", f: "普通耗材" },
+        { n: "充电循环电池", c: "百货", w: "2粒", p: 35.0, eco: true, co2: 45, i: "镍氢电池", f: "🌿 重复利用，减排首选" },
+        { n: "公牛插线板", c: "百货", w: "3米", p: 45.0, eco: false, co2: 650, i: "阻燃PP", f: "安全可靠" },
+        { n: "塑料衣架", c: "百货", w: "10个", p: 10.0, eco: false, co2: 320, i: "PP材质", f: "生活必需" },
+        { n: "不锈钢衣架", c: "百货", w: "10个", p: 25.0, eco: true, co2: 110, i: "201钢", f: "🌿 经久耐用，可回收" },
+        { n: "医用口罩", c: "百货", w: "10只", p: 5.0, eco: false, co2: 120, i: "熔喷布", f: "基础防护" },
+        { n: "暖宝宝贴", c: "百货", w: "1片", p: 1.5, eco: false, co2: 65, i: "铁粉", f: "暖冬好物" },
+        { n: "塑料脸盆", c: "百货", w: "30cm", p: 8.0, eco: false, co2: 240, i: "PP材质", f: "寝室收纳" },
+        { n: "玻璃水杯", c: "百货", w: "300ml", p: 15.0, eco: true, co2: 85, i: "高硼硅玻璃", f: "🌿 无塑安全" },
+
+        // 六、文具与数码配件 (20种)
+        { n: "晨光中性笔", c: "文具", w: "0.5mm", p: 2.5, eco: false, co2: 55, i: "塑料、油墨", f: "顺滑书写" },
+        { n: "白牌中性笔", c: "文具", w: "0.5mm", p: 1.0, eco: false, co2: 65, i: "普通塑料", f: "超值装" },
+        { n: "再生塑料笔", c: "文具", w: "0.5mm", p: 6.0, eco: true, co2: 10, i: "85%回收塑", f: "🌿 循环利用认证" },
+        { n: "晨光笔芯", c: "文具", w: "1支", p: 1.0, eco: false, co2: 15, i: "油墨", f: "日常补给" },
+        { n: "得力笔记本", c: "文具", w: "60页", p: 6.0, eco: false, co2: 180, i: "胶版纸", f: "记录生活" },
+        { n: "FSC认证笔记", c: "文具", w: "60页", p: 15.0, eco: true, co2: 35, i: "可持续纸张", f: "🌿 守护森林之选" },
+        { n: "得力2B铅笔", c: "文具", w: "1支", p: 1.0, eco: false, co2: 25, i: "木、石墨", f: "考试必备" },
+        { n: "得力橡皮", c: "文具", w: "1个", p: 1.5, eco: false, co2: 35, i: "PVC材质", f: "清洁力强" },
+        { n: "非PVC环保橡皮", c: "文具", w: "1个", p: 4.0, eco: true, co2: 8, i: "TPE材质", f: "🌿 无毒安全材质" },
+        { n: "修正带", c: "文具", w: "6m", p: 5.0, eco: false, co2: 95, i: "塑料膜", f: "遮盖迅速" },
+        { n: "固体胶", c: "文具", w: "9g", p: 3.0, eco: true, co2: 25, i: "PVP材质", f: "高粘度" },
+        { n: "订书机", c: "文具", w: "小型", p: 12.0, eco: false, co2: 310, i: "钢、塑", f: "办公助手" },
+        { n: "Type-C线", c: "文具", w: "1米", p: 15.0, eco: false, co2: 140, i: "TPE外皮", f: "快充兼容" },
+        { n: "白牌数据线", c: "文具", w: "1米", p: 5.0, eco: false, co2: 180, i: "普通PVC", f: "极致便宜" },
+        { n: "长寿命环保线", c: "文具", w: "1米", p: 35.0, eco: true, co2: 45, i: "再生尼龙", f: "🌿 耐用防断设计" },
+        { n: "金士顿U盘", c: "文具", w: "64GB", p: 45.0, eco: false, co2: 120, i: "电子组件", f: "高速存储" },
+        { n: "品胜充电宝", c: "文具", w: "10000mAh", p: 89.0, eco: false, co2: 1500, i: "锂电", f: "续航保障" },
+        { n: "有线耳机", c: "文具", w: "1.2米", p: 25.0, eco: false, co2: 110, i: "动圈单元", f: "听力考试款" },
+        { n: "无线蓝牙耳", c: "文具", w: "入耳式", p: 120.0, eco: false, co2: 350, i: "精密组件", f: "无线自由" },
+        { n: "手机支架", c: "文具", w: "折叠", p: 5.0, eco: false, co2: 125, i: "塑料", f: "视频伴侣" },
+
+        // 七、水果类 (40种)
+        { n: "红富士苹果", c: "水果", w: "250g/个", p: 4.5, eco: false, co2: 150, i: "精选富士", f: "常规化肥，长途冷链" },
+        { n: "特惠小富士", c: "水果", w: "150g/个", p: 2.0, eco: false, co2: 140, i: "普通富士", f: "高性价比选" },
+        { n: "有机零农残苹果", c: "水果", w: "250g/个", p: 9.0, eco: true, co2: 35, i: "有机种植", f: "🌿 生态基地直供" },
+        { n: "都乐香蕉", c: "水果", w: "200g/根", p: 2.5, eco: false, co2: 210, i: "进口蕉", f: "饱满香甜" },
+        { n: "本地散装香蕉", c: "水果", w: "150g/根", p: 1.2, eco: false, co2: 160, i: "本地蕉", f: "成熟度高" },
+        { n: "有机公平贸易香蕉", c: "水果", w: "200g/根", p: 5.0, eco: true, co2: 45, i: "有机认证", f: "🌿 尊重原产地，0塑装" },
+        { n: "砂糖橘", c: "水果", w: "500g", p: 8.5, eco: false, co2: 135, i: "砂糖橘", f: "皮薄无核" },
+        { n: "本地小橘子", c: "水果", w: "500g", p: 4.0, eco: false, co2: 110, i: "小橘子", f: "亲民价格" },
+        { n: "生态爱媛果冻橙", c: "水果", w: "500g", p: 15.0, eco: true, co2: 28, i: "生态果园", f: "🌿 果冻口感，近郊产" },
+        { n: "进口车厘子", c: "水果", w: "250g", p: 45.0, eco: false, co2: 850, i: "进口樱桃", f: "昂贵空运，极高碳足迹" },
+        { n: "国产樱桃", c: "水果", w: "250g", p: 25.0, eco: false, co2: 240, i: "国产樱桃", f: "时令尝鲜" },
+        { n: "有机种植大樱桃", c: "水果", w: "250g", p: 60.0, eco: true, co2: 65, i: "有机大樱桃", f: "🌿 环保纸盒，纯天然栽培" },
+        { n: "进口蓝莓", c: "水果", w: "125g", p: 15.0, eco: false, co2: 420, i: "进口蓝莓", f: "高标准品控" },
+        { n: "本地产蓝莓", c: "水果", w: "100g", p: 9.0, eco: false, co2: 180, i: "本地蓝莓", f: "高性价比" },
+        { n: "有机免洗蓝莓", c: "水果", w: "125g", p: 28.0, eco: true, co2: 40, i: "有机蓝莓", f: "🌿 降解盒装，无残留" },
+        { n: "红肉火龙果", c: "水果", w: "500g", p: 9.0, eco: false, co2: 210, i: "红心果", f: "营养丰富" },
+        { n: "白肉火龙果", c: "水果", w: "400g", p: 5.0, eco: false, co2: 165, i: "白心果", f: "实惠之选" },
+        { n: "有机生态红肉火龙", c: "水果", w: "500g", p: 18.0, eco: true, co2: 55, i: "生态果", f: "🌿 自然树熟，不催熟" },
+        { n: "海南贵妃芒", c: "水果", w: "250g", p: 6.0, eco: false, co2: 320, i: "贵妃芒", f: "皮薄汁多" },
+        { n: "青芒果", c: "水果", w: "300g", p: 3.5, eco: false, co2: 210, i: "本地青芒", f: "开胃微酸" },
+        { n: "有机树熟芒果", c: "水果", w: "250g", p: 12.0, eco: true, co2: 75, i: "有机果", f: "🌿 挂果成熟，极佳风味" },
+        { n: "麒麟西瓜(切块)", c: "水果", w: "250g", p: 8.0, eco: false, co2: 245, i: "西瓜块", f: "冷藏即食" },
+        { n: "整颗西瓜", c: "水果", w: "5kg", p: 15.0, eco: false, co2: 450, i: "花皮瓜", f: "家庭分享" },
+        { n: "低碳足迹认证西瓜", c: "水果", w: "1.5kg", p: 22.0, eco: true, co2: 35, i: "近郊瓜", f: "🌿 本地短途，极致低碳" },
+        { n: "佳沛绿奇异果", c: "水果", w: "100g", p: 5.0, eco: false, co2: 380, i: "进口果", f: "新西兰品质" },
+        { n: "国产优质猕猴桃", c: "水果", w: "80g", p: 2.5, eco: false, co2: 140, i: "国产果", f: "经济好味道" },
+        { n: "有机金果奇异果", c: "水果", w: "100g", p: 12.0, eco: true, co2: 45, i: "有机金果", f: "🌿 纸托包装，最高标准" },
+        { n: "阳光玫瑰葡萄", c: "水果", w: "300g", p: 18.0, eco: false, co2: 280, i: "精选葡萄", f: "浓郁玫瑰香" },
+        { n: "本地巨峰葡萄", c: "水果", w: "300g", p: 8.0, eco: false, co2: 160, i: "巨峰", f: "多汁亲民" },
+        { n: "有机无化肥提子", c: "水果", w: "300g", p: 32.0, eco: true, co2: 60, i: "有机提子", f: "🌿 纯净栽培，安心食用" },
+        { n: "库尔勒香梨", c: "水果", w: "150g", p: 3.0, eco: false, co2: 180, i: "库尔勒梨", f: "名产好味道" },
+        { n: "本地鸭梨", c: "水果", w: "200g", p: 1.5, eco: false, co2: 110, i: "普通梨", f: "基础解渴" },
+        { n: "有机种植梨", c: "水果", w: "150g", p: 7.0, eco: true, co2: 25, i: "有机梨", f: "🌿 无农残，生态保护" },
+        { n: "进口凤梨(切片)", c: "水果", w: "200g", p: 12.0, eco: false, co2: 310, i: "进口凤梨", f: "去芯便携" },
+        { n: "本地菠萝", c: "水果", w: "500g", p: 5.0, eco: false, co2: 195, i: "菠萝", f: "需自行削皮" },
+        { n: "有机金钻凤梨", c: "水果", w: "500g", p: 25.0, eco: true, co2: 40, i: "有机凤梨", f: "🌿 高端种植技术" },
+        { n: "精选奶油草莓", c: "水果", w: "250g", p: 20.0, eco: false, co2: 350, i: "奶油草莓", f: "香气迷人" },
+        { n: "本地露地草莓", c: "水果", w: "250g", p: 12.0, eco: false, co2: 190, i: "露地草莓", f: "纯天然形状" },
+        { n: "有机甘蔗浆盒草莓", c: "水果", w: "250g", p: 45.0, eco: true, co2: 65, i: "有机草莓", f: "🌿 完全可降解包装，纯净土培" },
+        { n: "综合鲜切水果杯", c: "水果", w: "300g", p: 15.0, eco: false, co2: 320, i: "多种水果", f: "营养均衡款" }
+    ];
+
+    // --- 2. 状态控制 [cite: 106-107] ---
+    const DB_KEY = 'campus_eco_v27_final';
+    const BUDGET = 100;
+    let balance = BUDGET;
+    let co2_sum = 0;
+    let cart = {}; 
+    let active_cat = "全部";
+
+    const jsPsych = initJsPsych();
+
+    // --- 3. 首页试次 [cite: 108-112] ---
+    const home_step = {
+        type: jsPsychSurveyHtmlForm,
+        html: `
+            <div class="iphone-frame">
+                <div class="home-page">
+                    <h1>Green Choice.</h1>
+                    <p><b>月末生存模拟：</b><br>当前您的伙食费余额仅剩 <span style="color:#000; font-weight:800;">¥${BUDGET}</span>。请根据您的真实需求选购本周生活物资。</p>
+                    <div class="form-row"><label>性别</label><select name="gender" class="apple-input" required><option value="">选择</option><option value="男">男</option><option value="女">女</option></select></div>
+                    <div class="form-row"><label>所属专业</label><select name="major" class="apple-input" required><option value="">选择</option><option value="理工类">理工类</option><option value="经管类">经管类</option><option value="文法类">文法类</option><option value="艺体类">艺体类</option></select></div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-row" style="flex:1"><label>年级</label><select name="grade" class="apple-input" required><option value="">选择</option><option value="1">大一</option><option value="2">大二</option><option value="3">大三</option><option value="4">大四</option></select></div>
+                        <div class="form-row" style="flex:1"><label>月生活费</label><select name="fund" class="apple-input" required><option value="">区间</option><option value="<1500"><1500</option><option value="1500-2500">1500-2500</option><option value=">2500">>2500</option></select></div>
+                    </div>
+                    <div style="margin-top:auto; padding-bottom:15px;">
+                        <button id="jspsych-survey-html-form-next" class="btn-primary" style="width:100%; display:block !important;">开始决策选购</button>
+                    </div>
+                </div>
+                <div class="admin-entry" onclick="adminAuth()">SYSTEM ADMINISTRATION</div>
+            </div>`,
+        on_load: () => { 
+            window.adminAuth = () => { if(prompt("Auth:") === "8888") renderDashboard(); }; 
+        }
+    };
+
+    // --- 4. 商城页试次 [cite: 113-132] ---
+    const mall_step = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: () => {
+            return `
+            <div class="iphone-frame">
+                <div class="glass-header">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+                        <span style="font-size:11px; font-weight:700; color:#86868b;">WALLET ¥<span id="ui-bal">${balance}</span></span>
+                        <span style="font-size:11px; font-weight:700; color:var(--apple-green)">👣 <span id="ui-co2">${co2_sum}</span>g CO2e</span>
+                    </div>
+                    <div class="cat-scroll">
+                        ${CATEGORIES.map(c => `<button class="cat-tag ${c===active_cat?'active':''}" onclick="setCategory('${c}')">${c}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="mall-list">
+                    <div id="p-grid">${renderCards()}</div>
+                </div>
+                <div class="action-bar">
+                    <div style="font-size:13px; font-weight:600;">已选: <span id="ui-qty">0</span>件</div>
+                    <button class="btn-primary" onclick="jsPsych.finishTrial()">结算离开</button>
+                </div>
+            </div>`;
+        },
+        choices: "NO_KEYS",
+        on_load: () => {
+            window.setCategory = (c) => {
+                active_cat = c;
+                document.getElementById('p-grid').innerHTML = renderCards();
+                document.querySelectorAll('.cat-tag').forEach(tag => tag.classList.toggle('active', tag.innerText === c));
+            };
+
+            window.updateItem = (id, delta) => {
+                const p = FULL_INVENTORY.find(x => x.n === id.split('|')[0]);
+                const uniqueId = p.n + '|' + p.c;
+                if (delta > 0 && balance < p.p) { alert("预算余额不足"); return; }
+                if (!cart[uniqueId]) cart[uniqueId] = { q: 0, p: p.p, co2: p.co2, name: p.n, eco: p.eco };
+                if (delta < 0 && cart[uniqueId].q <= 0) return;
+                
+                cart[uniqueId].q += delta;
+                balance = (parseFloat(balance) - (p.p * delta)).toFixed(1);
+                co2_sum += (p.co2 * delta);
+                
+                document.getElementById('ui-bal').innerText = balance;
+                document.getElementById('ui-co2').innerText = co2_sum;
+                document.getElementById('ui-qty').innerText = Object.values(cart).reduce((s,x)=>s+x.q, 0);
+                const qSpan = document.getElementById(`qty-${uniqueId}`);
+                if(qSpan) { qSpan.innerText = cart[uniqueId].q; qSpan.style.visibility = cart[uniqueId].q > 0 ? 'visible' : 'hidden'; }
+            };
+        },
+        on_finish: () => { 
+            pushResults(); // 核心：结算时触发数据同步
+        }
+    };
+
+    function renderCards() {
+        const filtered = active_cat === "全部" ? FULL_INVENTORY : FULL_INVENTORY.filter(x => x.c === active_cat);
+        return filtered.map(p => {
+            const uniqueId = p.n + '|' + p.c;
+            const curQ = cart[uniqueId] ? cart[uniqueId].q : 0;
+            return `
+            <div class="p-card">
+                ${p.eco ? '<div class="eco-label">🌿 绿色/环境友好产品</div>' : ''}
+                <div class="p-name">${p.n}</div>
+                <div class="p-info">
+                    <div class="p-row"><span class="p-label">规格：</span><span class="p-val">${p.w}</span></div>
+                    <div class="p-row"><span class="p-label">特点：</span><span class="p-val">${p.f}</span></div>
+                </div>
+                <div class="co2-tag">👣 碳足迹: ${p.co2}g CO2e</div>
+                <div class="price-footer">
+                    <span class="price-val">¥${p.p.toFixed(1)}</span>
+                    <div class="qty-box">
+                        <button class="btn-qty" onclick="updateItem('${uniqueId}', -1)">-</button>
+                        <span id="qty-${uniqueId}" style="font-weight:700; visibility:${curQ > 0 ? 'visible' : 'hidden'};">${curQ}</span>
+                        <button class="btn-qty" onclick="updateItem('${uniqueId}', 1)" style="background:#000; color:#fff;">+</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // --- 5. 结果小票 [cite: 133-140] ---
+    const thanks_step = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: () => {
+            const bought = Object.values(cart).filter(x => x.q > 0);
+            let list = bought.map(i => `<div class="receipt-item"><span>${i.name} x${i.q}</span><span>¥${(i.p*i.q).toFixed(1)}</span></div>`).join('');
+            return `
+            <div class="iphone-frame">
+                <div class="receipt-view">
+                    <div class="receipt-header"><h2>交易回执清单</h2></div>
+                    <div style="max-height:280px; overflow-y:auto;">${list || '<p>未选购商品</p>'}</div>
+                    <div class="receipt-total">
+                        <div class="receipt-item"><span>支出总计</span><span>- ¥${(BUDGET - balance).toFixed(1)}</span></div>
+                        <div class="receipt-item" style="color:var(--apple-blue); font-weight:800; font-size:18px;"><span>账户余额</span><span>¥${balance}</span></div>
+                        <div class="receipt-item" style="color:var(--apple-green); font-size:12px; margin-top:10px;"><span>碳足迹总计</span><span>${co2_sum}g</span></div>
+                    </div>
+                    <div style="margin-top:40px; text-align:center;">
+                        <h3 style="color:var(--apple-green);">✅ 数据同步成功</h3>
+                        <p style="font-size:14px; font-weight:600; margin-top:15px;">感谢参与！<br>调研已完成，您可以直接关闭此页面。</p>
+                        <p style="font-size:11px; color:var(--apple-sub); margin-top:25px;">[ 行为决策数据已安全传输至研究后台 ]</p>
+                    </div>
+                </div>
+            </div>`;
+        },
+        choices: "NO_KEYS" 
+    };
+
+    // --- 6. 联网上传逻辑 [cite: 141-143] ---
+    function pushResults() {
+        const info = jsPsych.data.get().filter({trial_type: 'survey-html-form'}).values()[0].response;
+        const results = {
+            date: new Date().toLocaleString(),
+            gender: info.gender, 
+            major: info.major, 
+            grade: info.grade, 
+            fund: info.fund,
+            spent: (BUDGET - balance).toFixed(1), 
+            co2: co2_sum,
+            cart: cart // 加入详细清单
+        };
+
+        // 存入本地
+        const data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        data.push(results);
+        localStorage.setItem(DB_KEY, JSON.stringify(data));
+
+        // 发送到阿里云服务器
+        const SERVER_URL = 'http://116.62.137.162:5000/save'; 
+        fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(results)
+        }).then(res => {
+            console.log("数据同步成功");
+        }).catch(err => {
+            console.error("同步失败，请检查 5000 端口状态");
+        });
+    }
+
+    function renderDashboard() {
+        const data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        document.body.innerHTML = `<div style="padding:40px; background:#fff; width:90%; border-radius:24px; box-shadow:0 10px 40px rgba(0,0,0,0.1); overflow-y:auto; max-height:90vh;">
+            <h2>📊 研究统计 (n=${data.length})</h2>
+            <table width="100%" border="1" style="border-collapse:collapse; text-align:center;">
+                <tr style="background:#f5f5f7"><th>时间</th><th>性别</th><th>专业</th><th>花费</th><th>碳排</th></tr>
+                ${data.reverse().map(d => `<tr><td>${d.date}</td><td>${d.gender}</td><td>${d.major}</td><td>${d.spent}</td><td>${d.co2}</td></tr>`).join('')}
+            </table>
+            <br><button onclick="location.reload()" style="padding:10px 24px; border-radius:12px; cursor:pointer;">返回</button>
+        </div>`;
+    }
+
+    jsPsych.run([home_step, mall_step, thanks_step]);
+</script>
+</body>
+</html>
